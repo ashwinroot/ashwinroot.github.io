@@ -136,7 +136,8 @@
                             if (command === "del") {
                                 this.removeall();
                             } else if (command === "call") {
-                                window.location.href("mail.php");
+                                window.location = "mail.php";
+
                             }
                             else if (command === "pres") {
                                 this.prescenceminus();
