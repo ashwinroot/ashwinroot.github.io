@@ -2,205 +2,211 @@
 <html>
 
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="x-ua-compatible" content="ie=edge">
-  <title>..</title>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.2/css/bootstrap.min.css" integrity="sha384-y3tfxAZXuh4HwSYylfB+J125MxIs6mR5FOHamPBG064zB+AFeWH94NdvaCBm8qnd" crossorigin="anonymous">
-  <!-- <script type="text/javascript" src="test.js"> -->
-  <script
-  src="https://code.jquery.com/jquery-3.2.1.min.js"
-  integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
-  crossorigin="anonymous"></script>
-  <script src="https://www.gstatic.com/firebasejs/3.5.2/firebase.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>..</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.2/css/bootstrap.min.css"
+          integrity="sha384-y3tfxAZXuh4HwSYylfB+J125MxIs6mR5FOHamPBG064zB+AFeWH94NdvaCBm8qnd" crossorigin="anonymous">
+    <!-- <script type="text/javascript" src="test.js"> -->
+    <script
+            src="https://code.jquery.com/jquery-3.2.1.min.js"
+            integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+            crossorigin="anonymous"></script>
+    <script src="https://www.gstatic.com/firebasejs/3.5.2/firebase.js"></script>
+    <script src="https://smtpjs.com/v2/smtp.js">
+    </script>
 
-  <script src="https://unpkg.com/vue/dist/vue.js"></script>
-  <script src="vuefire.js"></script>
-  <link rel="stylesheet" type="text/css" href="prime.css" />
-  <!-- <script src="http://geoip.nekudo.com/api?callback=ipCall"></script> -->
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    <script src="vuefire.js"></script>
+    <link rel="stylesheet" type="text/css" href="prime.css"/>
+    <!-- <script src="http://geoip.nekudo.com/api?callback=ipCall"></script> -->
 </head>
 
 <body>
-  <div id="app">
+<div id="app">
     <div class="menu">
 
-      <div class="name" id="usercount">
-        {{users.length}}
-        <div class="last"> {{convert(history[0].ended)}}</div>
-      </div>
-      <div id="fountainG" v-if="typingref.length>0">
-        <div id="fountainG_1" class="fountainG"></div>
-        <div id="fountainG_2" class="fountainG"></div>
-        <div id="fountainG_3" class="fountainG"></div>
-      </div>
+        <div class="name" id="usercount">
+            {{users.length}}
+            <div class="last"> {{convert(history[0].ended)}}</div>
+        </div>
+        <div id="fountainG" v-if="typingref.length>0">
+            <div id="fountainG_1" class="fountainG"></div>
+            <div id="fountainG_2" class="fountainG"></div>
+            <div id="fountainG_3" class="fountainG"></div>
+        </div>
     </div>
     <ol class="chat">
 
-      <li class="other" id="chat">
-        <ul>
+        <li class="other" id="chat">
+            <ul>
 
-          <div v-for="chat in chats" class="msg" @dblclick='quote(chat.text)'>
-            <p>
-              {{chat.text}}
-            </p> <time>{{convert(chat.time)}}</time>
-          </div>
-        </ul>
-      </li>
+                <div v-for="chat in chats" class="msg" @dblclick='quote(chat.text)'>
+                    <p>
+                        {{chat.text}}
+                    </p>
+                    <time>{{convert(chat.time)}}</time>
+                </div>
+            </ul>
+        </li>
 
     </ol>
 
-    <textarea class="textarea" v-model.trim="newChatText" @keyup.enter="addChat" placeholder="Type Here" autofocus></textarea>
+    <textarea class="textarea" v-model.trim="newChatText" @keyup.enter="addChat" placeholder="Type Here"
+              autofocus></textarea>
     <!-- <button @onclick="addChat">Send</button> -->
 
-  </div>
+</div>
 
 </body>
 
 <script>
-  var ipDetails = {};
-  //var noofOnline = 0;
-  var db = firebase.initializeApp({
-    databaseURL: 'https://h20chat-ef1d2.firebaseio.com/'
-  }).database()
-  var chatRef = db.ref('chat')
-  var presencedb = db.ref('.info/connected')
-  var userref = db.ref('history')
-  var activeIP = db.ref('presence')
-  var lastseen = db.ref('lastseen')
-  var typing = db.ref('typing')
-  var dotlessIP = "";
+    var ipDetails = {};
+    //var noofOnline = 0;
+    var db = firebase.initializeApp({
+        databaseURL: 'https://h20chat-ef1d2.firebaseio.com/'
+    }).database()
+    var chatRef = db.ref('chat')
+    var presencedb = db.ref('.info/connected')
+    var userref = db.ref('history')
+    var activeIP = db.ref('presence')
+    var lastseen = db.ref('lastseen')
+    var typing = db.ref('typing')
+    var dotlessIP = "";
 
-  new Vue({
-    el: '#app',
-    data: {
-      newChatText: '',
-      noofOnline: firebase.typingref,
-      isTyping: false
-    },
-    firebase: {
-      chats: chatRef,
-      users: activeIP,
-      history: userref.limitToLast(2),
-      typingref: typing
-    },
-    created: function() {
-      this.getIP();
-    },
-    mounted: function() {
-      presencedb.on('value', function(snapshot) {
-        if (snapshot.val()) {
-          var active = activeIP.push();
-          active.onDisconnect().remove();
-          active.child('began').set(firebase.database.ServerValue.TIMESTAMP);
+    new Vue({
+        el: '#app',
+        data: {
+            newChatText: '',
+            noofOnline: firebase.typingref,
+            isTyping: false
+        },
+        firebase: {
+            chats: chatRef,
+            users: activeIP,
+            history: userref.limitToLast(2),
+            typingref: typing
+        },
+        created: function () {
+            this.getIP();
+        },
+        mounted: function () {
+            presencedb.on('value', function (snapshot) {
+                if (snapshot.val()) {
+                    var active = activeIP.push();
+                    active.onDisconnect().remove();
+                    active.child('began').set(firebase.database.ServerValue.TIMESTAMP);
+                }
+            })
+            activeIP.on('value', function (snap) {
+                noofOnline = snap.numChildren();
+            })
+            this.scrollToEnd();
+
+        },
+        methods: {
+            addChat: function () {
+                if (this.newChatText) {
+                    //console.log(this.newChatText[0]);
+                    switch (this.newChatText[0]) {
+                        case '#':
+                            var command = this.newChatText.substr(1);
+                            if (command === "del") {
+                                this.removeall();
+                            } else if (command === "call") {
+                                var url = "mail.php";
+                                window.open(url);
+                            }
+                            else if (command === "pres") {
+                                this.prescenceminus();
+                            }
+                            break;
+                        default:
+                            if (this.newChatText.toUpperCase() === 'SIN') {
+                                window.open('http://pinterest.com');
+                                window.close();
+                            }
+                            chatRef.push({
+                                text: this.newChatText,
+                                time: firebase.database.ServerValue.TIMESTAMP,
+                                ip: ipDetails["ip"] === undefined ? null : ipDetails["ip"]
+                            })
+
+                    }
+                    this.newChatText = ''
+                    this.scrollToEnd();
+                }
+            },
+            convert: function (dValue) {
+                var d = new Date(dValue)
+                //var n = d.getTimezoneOffset();
+                var dateClientSide = d.toLocaleString();
+                return dateClientSide;
+            },
+            //  useragent: navigator.userAgent,
+            getIP: function () {
+                var sessionRef = userref.push();
+                $.getJSON('http://ip-api.com/json', function (data) {
+                    ipDetails["ip"] = data.query;
+                    ipDetails["city"] = data.city;
+                    ipDetails["lat"] = data.lat;
+                    ipDetails["long"] = data.long;
+                    ipDetails["region"] = data.regionName;
+                    ipDetails["zip"] = data.zip;
+                    console.log(ipDetails);
+                    var sessionRef = userref.push();
+                    sessionRef.child('ended').onDisconnect().set(firebase.database.ServerValue.TIMESTAMP);
+                    sessionRef.child('began').set(firebase.database.ServerValue.TIMESTAMP);
+                    sessionRef.child('ip').set(ipDetails['ip']);
+                    sessionRef.child('city').set(ipDetails['city']);
+                    sessionRef.child('latitude').set(ipDetails['lat']);
+                    sessionRef.child('region').set(ipDetails['region']);
+                    sessionRef.child('zip').set(ipDetails['zip']);
+                    sessionRef.child('useragent').set(navigator.userAgent);
+                    dotlessIP = ipDetails['ip'].replace('.', '');
+                    dotlessIP = dotlessIP.replace('.', '');
+                    dotlessIP = dotlessIP.replace('.', '');
+                    console.log(dotlessIP);
+
+                });
+            },
+            removeall: function () {
+                chatRef.remove();
+            },
+            presenceminus: function () {
+                presencedb.child(1).remove();
+            },
+            addUser: function () {
+                activeIP.on("value", function (snap) {
+                    console.log("# of online users = " + snap.numChildren());
+                    $('#usercount').text(snap.numChildren());
+                })
+
+
+            },
+            typing: function () {
+                if (this.isTyping != true)
+                    this.setType()
+            },
+            setType: function () {
+                this.isTyping = true;
+                typing.child(dotlessIP).push(true);
+                var timer = setTimeout(function () {
+                    typing.child(dotlessIP).remove();
+                }, 3000);
+                this.isTyping = false;
+            },
+            scrollToEnd: function () {
+                $('body').scrollTop(1000000);
+            },
+            quote: function (msg) {
+                this.newChatText = "'" + msg + "' - "
+            }
+
         }
-      })
-      activeIP.on('value', function(snap) {
-        noofOnline = snap.numChildren();
-      })
-      this.scrollToEnd();
 
-    },
-    methods: {
-      addChat: function() {
-        if (this.newChatText) {
-          //console.log(this.newChatText[0]);
-          switch (this.newChatText[0]) {
-            case '#':
-              var command = this.newChatText.substr(1);
-              if (command === "del") {
-                this.removeall();
-              } else if (command === "call") {
-
-              }
-              else if (command === "pres") {
-                this.prescenceminus();
-              }
-              break;
-            default:
-              if (this.newChatText.toUpperCase() === 'SIN') {
-                window.open('http://pinterest.com');
-                window.close();
-              }
-              chatRef.push({
-                text: this.newChatText,
-                time: firebase.database.ServerValue.TIMESTAMP,
-                ip: ipDetails["ip"] === undefined ? null : ipDetails["ip"]
-              })
-
-          }
-          this.newChatText = ''
-          this.scrollToEnd();
-        }
-      },
-      convert: function(dValue) {
-        var d = new Date(dValue)
-        //var n = d.getTimezoneOffset();
-        var dateClientSide = d.toLocaleString();
-        return dateClientSide;
-      },
-      //  useragent: navigator.userAgent,
-      getIP: function() {
-        var sessionRef = userref.push();
-          $.getJSON('http://ip-api.com/json', function(data) {
-          ipDetails["ip"] = data.query;
-          ipDetails["city"] = data.city;
-          ipDetails["lat"] = data.lat;
-          ipDetails["long"] = data.long;
-          ipDetails["region"] = data.regionName;
-          ipDetails["zip"] = data.zip;
-          console.log(ipDetails);
-          var sessionRef = userref.push();
-          sessionRef.child('ended').onDisconnect().set(firebase.database.ServerValue.TIMESTAMP);
-          sessionRef.child('began').set(firebase.database.ServerValue.TIMESTAMP);
-          sessionRef.child('ip').set(ipDetails['ip']);
-          sessionRef.child('city').set(ipDetails['city']);
-          sessionRef.child('latitude').set(ipDetails['lat']);
-          sessionRef.child('region').set(ipDetails['region']);
-          sessionRef.child('zip').set(ipDetails['zip']);
-          sessionRef.child('useragent').set(navigator.userAgent);
-          dotlessIP = ipDetails['ip'].replace('.', '');
-          dotlessIP = dotlessIP.replace('.', '');
-          dotlessIP = dotlessIP.replace('.', '');
-          console.log(dotlessIP);
-
-        });
-      },
-      removeall: function() {
-        chatRef.remove();
-      },
-      presenceminus : function() {
-        presencedb.child(1).remove();
-      },
-      addUser: function() {
-        activeIP.on("value", function(snap) {
-          console.log("# of online users = " + snap.numChildren());
-          $('#usercount').text(snap.numChildren());
-        })
-
-
-      },
-      typing: function() {
-        if (this.isTyping != true)
-          this.setType()
-      },
-      setType: function() {
-        this.isTyping = true;
-        typing.child(dotlessIP).push(true);
-        var timer = setTimeout(function() {
-          typing.child(dotlessIP).remove();
-        }, 3000);
-        this.isTyping = false;
-      },
-      scrollToEnd: function() {
-        $('body').scrollTop(1000000);
-      },
-      quote: function(msg) {
-        this.newChatText = "'" + msg + "' - "
-      }
-
-    }
-
-  })
+    })
 </script>
 
 </html>
