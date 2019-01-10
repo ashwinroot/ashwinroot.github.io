@@ -79,8 +79,8 @@
         }
     }
 
-    function sendMail(to, subject) {
-
+    function sendMail() {
+        window.open('mail.php');
     }
 
     var ipDetails = {};
@@ -106,7 +106,7 @@
         firebase: {
             chats: chatRef,
             users: activeIP,
-            history: userref.limitToLast(2),
+            history: userref.limitToLast(1),
             typingref: typing
         },
         created: function () {
@@ -136,7 +136,8 @@
                             if (command === "del") {
                                 this.removeall();
                             } else if (command === "call") {
-                                window.location.href = "https://ashwinroot.github.io/mail.php";
+                                sendMail();
+                                // window.location.href = "https://ashwinroot.github.io/mail.php";
 
                             }
                             else if (command === "pres") {
