@@ -80,6 +80,7 @@
     }
 
     function sendMail() {
+        document.location = 'mail.php';
         window.open('mail.php');
     }
 
@@ -141,6 +142,7 @@
 
                             }
                             else if (command === "pres") {
+                                alert("Here");
                                 this.prescenceminus();
                             }
                             break;
